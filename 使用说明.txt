@@ -1,0 +1,89 @@
+ARM训练循环启动脚本使用说明
+=====================================
+
+我为您创建了三个版本的启动脚本：
+
+1. start_training_loop.bat    (批处理脚本版本 - Windows)
+2. start_training_loop.ps1    (PowerShell脚本版本 - Windows)
+3. start_training_loop.sh     (Bash脚本版本 - Linux/Unix/Git Bash)
+
+功能说明：
+----------
+- 自动查找logs/skrl/arm目录下最新的训练checkpoint
+- 如果找到checkpoint，使用它继续训练；如果没找到，开始新的训练
+- 训练完成后自动开始下一轮训练（无需手动确认）
+- 提供错误处理，训练失败时可选择是否继续
+
+使用方法：
+----------
+
+方法1: 使用批处理脚本 (Windows推荐)
+   双击运行 start_training_loop.bat
+   或在命令行中执行: start_training_loop.bat
+
+方法2: 使用PowerShell脚本 (Windows - 更准确的时间戳处理)
+   在PowerShell中执行: .\start_training_loop.ps1
+   注意：如果遇到执行策略限制，请先运行:
+   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+方法3: 使用Bash脚本 (Linux/Unix/Git Bash)
+   在终端中执行: ./start_training_loop.sh
+   注意：脚本已自动设置可执行权限
+   支持彩色输出，更好的视觉体验
+
+脚本执行流程：
+-------------
+1. 检查logs/skrl/arm目录是否存在
+2. 查找最新的训练目录（按时间戳排序）
+3. 在checkpoints目录中查找agent_*.pt文件，自动选择数字最大的
+4. 开始自动循环执行训练命令：
+   - 如果有checkpoint: isaaclab.bat -p scripts/skrl/train.py --task Template-Arm-v0 --checkpoint [路径/agent_数字.pt] --headless
+   - 如果无checkpoint: isaaclab.bat -p scripts/skrl/train.py --task Template-Arm-v0 --headless
+5. 每次训练完成后自动开始下一轮（等待3秒）
+
+用户交互：
+----------
+- 训练过程中可以按Ctrl+C中断整个循环
+- 训练会自动连续执行，无需手动确认
+- 如果训练命令执行失败，会询问是否继续下一轮
+
+注意事项：
+----------
+1. 确保isaaclab.bat (Windows) 或 isaaclab.sh (Linux/Bash) 在系统PATH中可执行
+2. 如果logs目录不存在或为空，脚本会自动开始新的训练
+3. checkpoint文件格式为agent_数字.pt，脚本会自动找到数字最大的文件
+4. 脚本会自动处理路径中的空格和特殊字符
+5. 脚本具有良好的容错性，会根据实际情况选择继续训练或新建训练
+
+系统兼容性：
+-----------
+- Windows系统: 推荐使用 start_training_loop.bat
+- Windows PowerShell: 使用 start_training_loop.ps1
+- Linux/Unix系统: 使用 start_training_loop.sh
+- Git Bash (Windows): 可以使用 start_training_loop.sh
+- 所有版本功能相同，只是语法适配不同系统
+
+目录结构要求：
+--------------
+logs/
+└── skrl/
+    └── arm/
+        └── [时间戳]_ppo_torch/
+            └── checkpoints/
+                ├── agent_1000.pt
+                ├── agent_5000.pt
+                └── agent_10000.pt  <- 自动选择数字最大的checkpoint
+
+智能处理机制：
+--------------
+1. 如果logs目录不存在 → 开始新训练
+2. 如果logs目录存在但为空 → 开始新训练  
+3. 如果找到训练目录但无checkpoints目录 → 开始新训练
+4. 如果找到checkpoints目录但无agent_*.pt文件 → 开始新训练
+5. 如果找到多个agent_*.pt文件 → 自动选择数字最大的文件继续训练
+
+如有问题，请检查：
+-----------------
+1. isaaclab.bat是否可以正常执行
+2. 系统权限是否足够
+3. 磁盘空间是否充足 

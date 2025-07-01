@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  arm-train:
+    image: integem/arm-train:latest
+    container_name: arm-train
+    pull_policy: always
+    runtime: nvidia
+    network_mode: host
+    environment:
+      - ACCEPT_EULA=Y
+      # 训练参数配置
+      - NUM_ENVS=2048                    # 并行环境数量
+      - TIMESTEPS=100000                 # 训练时间步数
+      - EPISODE_LENGTH_S=1200            # 每个episode长度(秒)
+      # 奖励函数权重参数
+      - REWARD_ALIVE=1.0                 # 存活奖励权重
+      - REWARD_TERMINATING=-2.0          # 终止惩罚权重
+      - REWARD_END_EFFECTOR_POSITION=-5.0 # 末端执行器位置奖励权重
+      - REWARD_JOINT_VEL=-0.01           # 关节速度惩罚权重
+      - REWARD_JOINT_VEL_SMOOTH=-0.005   # 关节速度平滑惩罚权重
+      # PPO 训练参数
+      - LEARNING_RATE=0.0003             # 学习率
+      - ROLLOUTS=64                      # 滚动缓冲区大小
+      - LEARNING_EPOCHS=10               # 每次更新的学习轮数
+      - MINI_BATCHES=16                  # 小批次数量
+      - DISCOUNT_FACTOR=0.99             # 折扣因子
+      - ENTROPY_LOSS_SCALE=0.01          # 熵损失缩放
+      - VALUE_LOSS_SCALE=2.0             # 价值损失缩放
+    volumes:
+      - ./logs:/IsaacLab-2.1.0/logs
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
+    stdin_open: true
+    tty: true 
